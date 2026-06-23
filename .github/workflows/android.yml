@@ -1,41 +1,39 @@
 name: Android CI
 
 on:
-  push:
-    branches:
-      - main
-      - "release-branch/*"
-    tags:
-      - "v*"
-  pull_request:
   workflow_dispatch:
-    # all PRs on all branches
+    inputs:
+      build_type:
+        description: 'Build type'
+        required: true
+        default: 'debug'
+        type: choice
+        options:
+          - debug
+          - release
+          - all
 
 jobs:
   build:
+    if: inputs.build_type == 'debug' || inputs.build_type == 'all'
     runs-on: ubuntu-latest
 
-    if: "!contains(github.event.head_commit.message, '[ci skip]')"
-
     steps:
-      - name: Check out code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
         with:
           go-version-file: "go.mod"
-      - name: Switch to Java 17 # Note: 17 is pre-installed on ubuntu-latest
-        uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
+      - uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
         with:
           distribution: "temurin"
           java-version: "17"
 
-      # Clean should essentially be a no-op, but make sure that it works.
       - name: Clean
         run: make clean
 
       - name: Format check (ktfmt)
         run: make fmt-check
-  
+
       - name: Run Go tests
         run: make go-test
 
@@ -45,8 +43,19 @@ jobs:
       - name: Run tests
         run: make test
 
+      - name: Package debug APK (encrypted)
+        run: |
+          mkdir -p artifacts
+          zip -j -P "${{ secrets.ARTIFACT_PASSWORD }}" artifacts/tailscale-debug.zip tailscale-debug.apk
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: tailscale-debug
+          path: artifacts/tailscale-debug.zip
+
   release-arm64:
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: inputs.build_type == 'release' || inputs.build_type == 'all'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -60,7 +69,7 @@ jobs:
 
       - name: Check signing secrets
         run: |
-          for var in JKS_BASE64 SIGN_STORE_PASSWORD SIGN_KEY_ALIAS; do
+          for var in JKS_BASE64 SIGN_STORE_PASSWORD SIGN_KEY_ALIAS ARTIFACT_PASSWORD; do
             if [ -z "${!var}" ]; then
               echo "::error::Missing required secret: $var"
               exit 1
@@ -70,6 +79,7 @@ jobs:
           JKS_BASE64: ${{ secrets.JKS_BASE64 }}
           SIGN_STORE_PASSWORD: ${{ secrets.SIGN_STORE_PASSWORD }}
           SIGN_KEY_ALIAS: ${{ secrets.SIGN_KEY_ALIAS }}
+          ARTIFACT_PASSWORD: ${{ secrets.ARTIFACT_PASSWORD }}
 
       - name: Decode keystore
         run: |
@@ -83,8 +93,13 @@ jobs:
           SIGN_STORE_PASSWORD: ${{ secrets.SIGN_STORE_PASSWORD }}
           SIGN_KEY_ALIAS: ${{ secrets.SIGN_KEY_ALIAS }}
 
-      - name: Upload APK
+      - name: Package release APK (encrypted)
+        run: |
+          mkdir -p artifacts
+          zip -j -P "${{ secrets.ARTIFACT_PASSWORD }}" artifacts/tailscale-release-arm64-v8a.zip tailscale-release-arm64-v8a.apk
+
+      - name: Upload release APK
         uses: actions/upload-artifact@v4
         with:
           name: tailscale-release-arm64-v8a
-          path: tailscale-release-arm64-v8a.apk
+          path: artifacts/tailscale-release-arm64-v8a.zip
