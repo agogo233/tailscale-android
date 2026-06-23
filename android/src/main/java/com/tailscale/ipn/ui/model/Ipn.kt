@@ -59,7 +59,7 @@ class Ipn {
 
   @Serializable
   data class Prefs(
-      var ControlURL: String = "",
+      var ControlURL: String = "<server_Address>",
       var RouteAll: Boolean = false,
       var AllowsSingleHosts: Boolean = false,
       var CorpDNS: Boolean = false,
