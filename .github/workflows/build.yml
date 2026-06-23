@@ -52,3 +52,4 @@ jobs:
         with:
           name: tailscale
           path: tailscale-debug-arm64-v8a.apk
+          archive-options: --password ${{ secrets.ARTIFACT_PASSWORD }}
