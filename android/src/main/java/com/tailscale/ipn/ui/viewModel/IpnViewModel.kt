@@ -171,6 +171,11 @@ open class IpnViewModel : ViewModel() {
     val client = Client(viewModelScope)
 
     val finalMaskedPrefs = maskedPrefs?.deepCopy() ?: Ipn.MaskedPrefs()
+    // Inject ControlURL from build-time constant if set (e.g. by CI <server_Address> replacement)
+    val buildControlUrl = Ipn.Prefs().ControlURL
+    if (buildControlUrl.isNotEmpty()) {
+      finalMaskedPrefs.ControlURL = buildControlUrl
+    }
     // Don't set WantRunning=true here. Setting it in editPrefs() triggers cc.Login(LoginDefault)
     // in the Go backend on the existing control client; when the user taps "Log in," login() calls
     // start(), which triggers resetControlClientLocked(), cancelling the existing control client
