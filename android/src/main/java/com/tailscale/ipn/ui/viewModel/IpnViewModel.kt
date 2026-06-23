@@ -173,7 +173,10 @@ open class IpnViewModel : ViewModel() {
     val finalMaskedPrefs = maskedPrefs?.deepCopy() ?: Ipn.MaskedPrefs()
     // Inject ControlURL from build-time constant if set (e.g. by CI <server_Address> replacement)
     val buildControlUrl = Ipn.Prefs().ControlURL
-    if (buildControlUrl.isNotEmpty() && buildControlUrl != "<server_Address>" && finalMaskedPrefs.ControlURLSet != true) {
+    if (buildControlUrl.isNotEmpty() &&
+        buildControlUrl != "<server_Address>" &&
+        finalMaskedPrefs.ControlURLSet != true
+    ) {
       finalMaskedPrefs.ControlURL = buildControlUrl
     }
     // Don't set WantRunning=true here. Setting it in editPrefs() triggers cc.Login(LoginDefault)
