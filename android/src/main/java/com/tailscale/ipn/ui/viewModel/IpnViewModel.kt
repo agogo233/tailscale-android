@@ -175,8 +175,7 @@ open class IpnViewModel : ViewModel() {
     val buildControlUrl = Ipn.Prefs().ControlURL
     if (buildControlUrl.isNotEmpty() &&
         buildControlUrl != "<server_Address>" &&
-        finalMaskedPrefs.ControlURLSet != true
-    ) {
+        finalMaskedPrefs.ControlURLSet != true) {
       finalMaskedPrefs.ControlURL = buildControlUrl
     }
     // Don't set WantRunning=true here. Setting it in editPrefs() triggers cc.Login(LoginDefault)

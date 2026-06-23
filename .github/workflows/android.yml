@@ -5,7 +5,10 @@ on:
     branches:
       - main
       - "release-branch/*"
+    tags:
+      - "v*"
   pull_request:
+  workflow_dispatch:
     # all PRs on all branches
 
 jobs:
@@ -41,3 +44,47 @@ jobs:
 
       - name: Run tests
         run: make test
+
+  release-arm64:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
+        with:
+          go-version-file: "go.mod"
+      - uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Check signing secrets
+        run: |
+          for var in JKS_BASE64 SIGN_STORE_PASSWORD SIGN_KEY_ALIAS; do
+            if [ -z "${!var}" ]; then
+              echo "::error::Missing required secret: $var"
+              exit 1
+            fi
+          done
+        env:
+          JKS_BASE64: ${{ secrets.JKS_BASE64 }}
+          SIGN_STORE_PASSWORD: ${{ secrets.SIGN_STORE_PASSWORD }}
+          SIGN_KEY_ALIAS: ${{ secrets.SIGN_KEY_ALIAS }}
+
+      - name: Decode keystore
+        run: |
+          echo "${{ secrets.JKS_BASE64 }}" | base64 -d > /tmp/release.jks
+          chmod 600 /tmp/release.jks
+
+      - name: Build signed arm64-v8a release APK
+        run: make release-apk-arm64-v8a
+        env:
+          SIGN_STORE_FILE: /tmp/release.jks
+          SIGN_STORE_PASSWORD: ${{ secrets.SIGN_STORE_PASSWORD }}
+          SIGN_KEY_ALIAS: ${{ secrets.SIGN_KEY_ALIAS }}
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: tailscale-release-arm64-v8a
+          path: tailscale-release-arm64-v8a.apk

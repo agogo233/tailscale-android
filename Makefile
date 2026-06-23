@@ -24,6 +24,12 @@ DEBUG_APK := tailscale-debug.apk
 RELEASE_AAB := tailscale-release.aab
 RELEASE_TV_AAB := tailscale-tv-release.aab
 
+# Map legacy JKS_* env vars to SIGN_* for Gradle signingConfigs.
+# CI sets SIGN_* directly; local devs can use JKS_* or SIGN_*.
+SIGN_STORE_FILE ?= $(JKS_PATH)
+SIGN_STORE_PASSWORD ?= $(JKS_PASSWORD)
+SIGN_KEY_ALIAS ?= $(JKS_ALIAS)
+
 # Define output filenames.
 LIBTAILSCALE_AAR := android/libs/libtailscale.aar
 UNSTRIPPED_AAR := android/libs/libtailscale_unstripped.aar
@@ -139,6 +145,26 @@ release: jarsign-env $(RELEASE_AAB)
 .PHONY: release-tv
 release-tv: jarsign-env $(RELEASE_TV_AAB)
 	@jarsigner -sigalg SHA256withRSA -digestalg SHA-256 -keystore $(JKS_PATH) -storepass $(JKS_PASSWORD) $(RELEASE_TV_AAB) tailscale
+
+# Builds arm64-v8a debug APK (unsigned, for development and testing)
+.PHONY: apk-arm64-v8a
+apk-arm64-v8a: version gradle-dependencies
+	@echo "Building arm64-v8a debug APK..."
+	(cd android && ./gradlew assembleDebug -Pabis=arm64-v8a)
+	install -C ./android/build/outputs/apk/debug/android-debug.apk tailscale-debug-arm64-v8a.apk
+	@echo "Successfully built: tailscale-debug-arm64-v8a.apk"
+
+# Builds arm64-v8a release APK signed via Gradle signingConfigs (reads SIGN_* env vars)
+.PHONY: release-apk-arm64-v8a
+release-apk-arm64-v8a: version gradle-dependencies
+	@echo "Building arm64-v8a release APK..."
+	(cd android && \
+	 env SIGN_STORE_FILE="$(SIGN_STORE_FILE)" \
+	     SIGN_STORE_PASSWORD="$(SIGN_STORE_PASSWORD)" \
+	     SIGN_KEY_ALIAS="$(SIGN_KEY_ALIAS)" \
+	 ./gradlew test assembleRelease -Pabis=arm64-v8a)
+	install -C ./android/build/outputs/apk/release/android-release.apk tailscale-release-arm64-v8a.apk
+	@echo "Successfully built: tailscale-release-arm64-v8a.apk"
 
 # gradle-dependencies groups together the android sources and libtailscale needed to assemble tests/debug/release builds.
 .PHONY: gradle-dependencies

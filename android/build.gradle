@@ -34,6 +34,16 @@ apply plugin: 'com.ncorti.ktfmt.gradle'
 android {
     ndkVersion "23.1.7779620"
     compileSdkVersion 34
+
+    signingConfigs {
+        release {
+            storeFile file(System.getenv('SIGN_STORE_FILE') ?: '/dev/null')
+            storePassword System.getenv('SIGN_STORE_PASSWORD') ?: ''
+            keyAlias System.getenv('SIGN_KEY_ALIAS') ?: ''
+            keyPassword System.getenv('SIGN_STORE_PASSWORD') ?: ''
+        }
+    }
+
     defaultConfig {
         minSdkVersion 26
         targetSdkVersion 35
@@ -48,6 +58,12 @@ android {
         // Set it to false either here or in your local.properties file to
         // disable this behaviour.
         buildConfigField "boolean", "USE_GOOGLE_DNS_FALLBACK", getLocalProperty("tailscale.useGoogleDnsFallback", "true")
+
+        if (project.hasProperty('abis')) {
+            ndk {
+                abiFilters project.property('abis').split(',')
+            }
+        }
     }
 
     compileOptions {
@@ -88,6 +104,7 @@ android {
             manifestPlaceholders.leanbackRequired = false
         }
         release {
+            signingConfig signingConfigs.release
             manifestPlaceholders.leanbackRequired = false
 
             minifyEnabled true
