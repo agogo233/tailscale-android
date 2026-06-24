@@ -40,6 +40,17 @@ jobs:
       - name: Build APKs
         run: make tailscale-debug.apk
 
+      - name: Verify debug APK signature
+        run: |
+          ANDROID_HOME=$(find /usr/lib/android-sdk $HOME/Android/Sdk $ANDROID_SDK_ROOT $ANDROID_HOME -maxdepth 1 -type d 2>/dev/null | head -n 1)
+          APKSIGNER=$ANDROID_HOME/build-tools/34.0.0/apksigner
+          if [ ! -f "$APKSIGNER" ]; then
+            echo "apksigner not found at $APKSIGNER"
+            ls -la $ANDROID_HOME/build-tools/ 2>/dev/null || true
+            exit 1
+          fi
+          $APKSIGNER verify --verbose tailscale-debug.apk
+
       - name: Run tests
         run: make test
 
@@ -92,6 +103,17 @@ jobs:
           SIGN_STORE_FILE: /tmp/release.jks
           SIGN_STORE_PASSWORD: ${{ secrets.SIGN_STORE_PASSWORD }}
           SIGN_KEY_ALIAS: ${{ secrets.SIGN_KEY_ALIAS }}
+
+      - name: Verify release APK signature
+        run: |
+          ANDROID_HOME=$(find /usr/lib/android-sdk $HOME/Android/Sdk $ANDROID_SDK_ROOT $ANDROID_HOME -maxdepth 1 -type d 2>/dev/null | head -n 1)
+          APKSIGNER=$ANDROID_HOME/build-tools/34.0.0/apksigner
+          if [ ! -f "$APKSIGNER" ]; then
+            echo "apksigner not found at $APKSIGNER"
+            ls -la $ANDROID_HOME/build-tools/ 2>/dev/null || true
+            exit 1
+          fi
+          $APKSIGNER verify --verbose tailscale-release-arm64-v8a.apk
 
       - name: Package release APK (encrypted)
         run: |
