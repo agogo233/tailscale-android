@@ -47,7 +47,11 @@ android {
     defaultConfig {
         minSdkVersion 26
         targetSdkVersion 35
-        versionCode 615
+        // versionCode is written here by `make bumposs` / `make tag_release`
+        // (base = major*100000000 + minor*100000 + patch*10). AndroidTV builds
+        // increment this by 1 in the Makefile's release-tv target so the two
+        // variants are distinguishable in the Play Store.
+        versionCode 110101660
         versionName getVersionProperty("VERSION_LONG")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -95,17 +99,17 @@ android {
     buildTypes {
         applicationTest {
             initWith debug
-            manifestPlaceholders.leanbackRequired = false
+            manifestPlaceholders.leanbackRequired = isTV()
             buildConfigField "String", "GITHUB_USERNAME", "\"" + getLocalProperty("githubUsername", "")+"\""
             buildConfigField "String", "GITHUB_PASSWORD", "\"" + getLocalProperty("githubPassword", "")+"\""
             buildConfigField "String", "GITHUB_2FA_SECRET", "\"" + getLocalProperty("github2FASecret", "")+"\""
         }
         debug {
-            manifestPlaceholders.leanbackRequired = false
+            manifestPlaceholders.leanbackRequired = isTV()
         }
         release {
             signingConfig signingConfigs.release
-            manifestPlaceholders.leanbackRequired = false
+            manifestPlaceholders.leanbackRequired = isTV()
 
             minifyEnabled true
 
@@ -114,10 +118,6 @@ android {
             proguardFiles getDefaultProguardFile(
                     'proguard-android-optimize.txt'),
                     'proguard-rules.pro'
-        }
-        release_tv {
-            initWith release
-            manifestPlaceholders.leanbackRequired = true
         }
     }
 
@@ -131,6 +131,7 @@ dependencies {
     implementation "androidx.browser:browser:1.8.0"
     implementation "androidx.security:security-crypto:1.1.0-alpha06"
     implementation "androidx.work:work-runtime:2.9.1"
+    implementation "androidx.work:work-runtime-ktx:2.9.1"
 
     // Kotlin dependencies.
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3"
@@ -211,4 +212,8 @@ def getVersionProperty(key) {
     def versionProps = new Properties()
     versionProps.load(project.file('../tailscale.version').newDataInputStream())
     return versionProps.getProperty(key).replaceAll('^\"|\"$', '')
+}
+
+def isTV() {
+    return project.findProperty('PLATFORM')?.toString() == 'tv'
 }
