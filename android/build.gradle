@@ -11,7 +11,7 @@ buildscript {
         }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.6.1'
+        classpath 'com.android.tools.build:gradle:8.13.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "org.jetbrains.kotlin:kotlin-serialization:$kotlin_version"
         classpath("com.ncorti.ktfmt.gradle:plugin:0.17.0")
@@ -32,8 +32,10 @@ apply plugin: 'org.jetbrains.kotlin.plugin.serialization'
 apply plugin: 'com.ncorti.ktfmt.gradle'
 
 android {
+    def androidApiLevel = providers.gradleProperty("androidApiLevel").get().toInteger()
+
     ndkVersion "23.1.7779620"
-    compileSdkVersion 34
+    compileSdkVersion androidApiLevel
 
     signingConfigs {
         release {
@@ -46,12 +48,15 @@ android {
 
     defaultConfig {
         minSdkVersion 26
-        targetSdkVersion 35
-        // versionCode is written here by `make bumposs` / `make tag_release`
-        // (base = major*100000000 + minor*100000 + patch*10). AndroidTV builds
-        // increment this by 1 in the Makefile's release-tv target so the two
-        // variants are distinguishable in the Play Store.
-        versionCode 110101660
+        targetSdkVersion androidApiLevel
+
+        // VERSION_CODE_BASE is minutes since the Unix epoch, times 10. The
+        // final digit is reserved for the platform: 0 for phone/tablet and 1
+        // for Android TV. Release builds pass VERSION_CODE_BASE from the
+        // Makefile so both variants share the same base. Other builds fall
+        // back to the current time so local/debug Gradle invocations continue
+        // to work without extra arguments.
+        versionCode computeVersionCode()
         versionName getVersionProperty("VERSION_LONG")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -178,7 +183,6 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
     implementation 'androidx.test.uiautomator:uiautomator:2.3.0'
 
-
     // Authentication only for tests
     androidTestImplementation 'dev.turingcomplete:kotlin-onetimepassword:2.4.0'
     androidTestImplementation 'commons-codec:commons-codec:1.16.1'
@@ -211,7 +215,23 @@ def getVersionProperty(key) {
     //      make tailscale.version
     def versionProps = new Properties()
     versionProps.load(project.file('../tailscale.version').newDataInputStream())
-    return versionProps.getProperty(key).replaceAll('^\"|\"$', '')
+    return versionProps.getProperty(key).replaceAll('^"|"$', '')
+}
+
+def computeVersionCode() {
+    def baseProperty = project.findProperty('VERSION_CODE_BASE')
+
+    // Direct/local Gradle invocations may not come through the Makefile. Keep
+    // those builds working by deriving a monotonic base from wall-clock time.
+    def base = baseProperty != null
+            ? baseProperty as long
+            : (System.currentTimeMillis() / 60000L) * 10L
+
+    // 0 for Android, 1 for Android TV. This keeps the two binaries distinguishable
+    // in the Play Store while sharing a release base.
+    def platform = isTV() ? 1 : 0
+
+    return (base + platform) as int
 }
 
 def isTV() {
