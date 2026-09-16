@@ -17,6 +17,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
@@ -37,6 +38,17 @@ class SplitTunnelAppPickerViewModel : ViewModel() {
               initialValue = listOf(),
           )
   val selectedPackageNames: StateFlow<List<String>> = MutableStateFlow(listOf())
+  val searchTerm: StateFlow<String> = MutableStateFlow("")
+
+  val visibleApps: StateFlow<List<InstalledApp>> =
+      combine(installedApps, searchTerm, selectedPackageNames) { apps, term, selected ->
+            filterAndSortApps(apps, term, selected.toSet())
+          }
+          .stateIn(
+              scope = viewModelScope,
+              started = SharingStarted.WhileSubscribed(5000),
+              initialValue = emptyList(),
+          )
 
   val allowSelected: StateFlow<Boolean> = MutableStateFlow(App.get().allowSelectedPackages())
   val showHeaderMenu: StateFlow<Boolean> = MutableStateFlow(false)
@@ -46,6 +58,26 @@ class SplitTunnelAppPickerViewModel : ViewModel() {
   val mdmIncludedPackages: StateFlow<SettingState<String?>> = MDMSettings.includedPackages.flow
 
   private var saveJob: Job? = null
+
+  fun updateSearchTerm(term: String) {
+    searchTerm.set(term)
+  }
+
+  private fun filterAndSortApps(
+      apps: List<InstalledApp>,
+      term: String,
+      selectedPackageNames: Set<String>,
+  ): List<InstalledApp> {
+    val query = term.trim().lowercase()
+    val pinned = selectedPackageNames - App.get().builtInDisallowedPackageNames
+    val filtered = apps.filter { matchesSearch(it, query) }
+    return filtered.sortedBy { !pinned.contains(it.packageName) }
+  }
+
+  private fun matchesSearch(app: InstalledApp, query: String): Boolean {
+    if (query.isEmpty()) return true
+    return app.name.lowercase().contains(query) || app.packageName.lowercase().contains(query)
+  }
 
   private fun initSelectedPackageNames() {
     allowSelected.set(App.get().allowSelectedPackages())
