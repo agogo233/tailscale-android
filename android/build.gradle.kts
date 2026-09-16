@@ -49,7 +49,11 @@ android {
         )
 
         project.findProperty("abis")?.toString()?.split(",")
-            ?.let { abiFilters.addAll(it) }
+            ?.let {
+                ndk {
+                    abiFilters.addAll(it)
+                }
+            }
     }
 
     compileOptions {
