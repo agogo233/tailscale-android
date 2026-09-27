@@ -50,22 +50,27 @@ open class IpnViewModel : ViewModel() {
   enum class NodeState {
     NONE,
     ACTIVE_AND_RUNNING,
+
     // Last selected exit node is active but is not being used.
     ACTIVE_NOT_RUNNING,
+
     // Last selected exit node is currently offline.
     OFFLINE_ENABLED,
+
     // Last selected exit node has been de-selected and is currently offline.
     OFFLINE_DISABLED,
+
     // Exit node selection is managed by an administrator, and last selected exit node is currently
     // offline
     OFFLINE_MDM,
-    RUNNING_AS_EXIT_NODE
+    RUNNING_AS_EXIT_NODE,
   }
 
   init {
     viewModelScope.launch {
       Notifier.state.collect {
-        // Reload the user profiles on all state transitions to ensure loggedInUser is correct
+        // Reload the user profiles on all state transitions to ensure loggedInUser is
+        // correct
         viewModelScope.launch { loadUserProfiles() }
       }
     }
@@ -73,8 +78,8 @@ open class IpnViewModel : ViewModel() {
     // This will observe the userId of the current node and reload our user profiles if
     // we discover it has changed (e.g. due to a login or user switch)
     viewModelScope.launch {
-      Notifier.netmap.collect {
-        it?.SelfNode?.User.let {
+      Notifier.netmap.collect { netmap ->
+        netmap?.SelfNode?.User.let {
           if (it != selfNodeUserId) {
             selfNodeUserId = it
             viewModelScope.launch { loadUserProfiles() }
@@ -101,8 +106,9 @@ open class IpnViewModel : ViewModel() {
             val validNetmap = netmap ?: return@combine NodeState.NONE
 
             val chosenExitNodeId = validPrefs.activeExitNodeID ?: validPrefs.selectedExitNodeID
-            val exitNodePeer =
-                chosenExitNodeId?.let { id -> validNetmap.Peers?.find { it.StableID == id } }
+            val exitNodePeer = chosenExitNodeId?.let { id ->
+              validNetmap.Peers?.find { it.StableID == id }
+            }
 
             when {
               exitNodePeer?.Online == false -> {
@@ -121,7 +127,7 @@ open class IpnViewModel : ViewModel() {
                   NodeState.ACTIVE_NOT_RUNNING
                 }
               }
-              isRunningExitNode == true -> {
+              isRunningExitNode -> {
                 NodeState.RUNNING_AS_EXIT_NODE
               }
               else -> {
@@ -161,7 +167,7 @@ open class IpnViewModel : ViewModel() {
   fun login(
       maskedPrefs: Ipn.MaskedPrefs? = null,
       authKey: String? = null,
-      completionHandler: (Result<Unit>) -> Unit = {}
+      completionHandler: (Result<Unit>) -> Unit = {},
   ) {
     // Start the IPNService foreground notification so that Android
     // does not freeze the process or cut network access while the user is in the browser
@@ -173,9 +179,11 @@ open class IpnViewModel : ViewModel() {
     val finalMaskedPrefs = maskedPrefs?.deepCopy() ?: Ipn.MaskedPrefs()
     // Inject ControlURL from build-time constant if set (e.g. by CI <server_Address> replacement)
     val buildControlUrl = Ipn.Prefs().ControlURL
-    if (buildControlUrl.isNotEmpty() &&
-        buildControlUrl != "<server_Address>" &&
-        finalMaskedPrefs.ControlURLSet != true) {
+    if (
+        buildControlUrl.isNotEmpty() &&
+            buildControlUrl != "<server_Address>" &&
+            finalMaskedPrefs.ControlURLSet != true
+    ) {
       finalMaskedPrefs.ControlURL = buildControlUrl
     }
     // Don't set WantRunning=true here. Setting it in editPrefs() triggers cc.Login(LoginDefault)
@@ -195,9 +203,9 @@ open class IpnViewModel : ViewModel() {
             TSLog.e(TAG, "editPrefs() failed: ${it.message}")
             completionHandler(Result.failure(it))
           }
-          .onSuccess {
-            it.WantRunning = true
-            val opts = Ipn.Options(UpdatePrefs = it, AuthKey = authKey)
+          .onSuccess { success ->
+            success.WantRunning = true
+            val opts = Ipn.Options(UpdatePrefs = success, AuthKey = authKey)
             client.start(opts) { startResult ->
               startResult
                   .onFailure {
@@ -208,7 +216,10 @@ open class IpnViewModel : ViewModel() {
                     client.startLoginInteractive { loginResult ->
                       loginResult
                           .onFailure {
-                            TSLog.e(TAG, "startLoginInteractive() failed: ${it.message}")
+                            TSLog.e(
+                                TAG,
+                                "startLoginInteractive() failed: ${it.message}",
+                            )
                             completionHandler(Result.failure(it))
                           }
                           .onSuccess { completionHandler(Result.success(Unit)) }
@@ -227,7 +238,7 @@ open class IpnViewModel : ViewModel() {
 
   fun loginWithCustomControlURL(
       controlURL: String,
-      completionHandler: (Result<Unit>) -> Unit = {}
+      completionHandler: (Result<Unit>) -> Unit = {},
   ) {
     val prefs = Ipn.MaskedPrefs()
     prefs.ControlURL = controlURL
@@ -311,12 +322,12 @@ open class IpnViewModel : ViewModel() {
   fun setRunningExitNode(isOn: Boolean) {
     LoadingIndicator.start()
     lastPrefs?.let { currentPrefs ->
-      val newPrefs: Ipn.MaskedPrefs
-      if (isOn) {
-        newPrefs = setZeroRoutes(currentPrefs)
-      } else {
-        newPrefs = removeAllZeroRoutes(currentPrefs)
-      }
+      val newPrefs: Ipn.MaskedPrefs =
+          if (isOn) {
+            setZeroRoutes(currentPrefs)
+          } else {
+            removeAllZeroRoutes(currentPrefs)
+          }
       Client(viewModelScope).editPrefs(newPrefs) { result ->
         LoadingIndicator.stop()
         TSLog.d("RunExitNodeViewModel", "Edited prefs: $result")
@@ -325,7 +336,7 @@ open class IpnViewModel : ViewModel() {
   }
 
   private fun setZeroRoutes(prefs: Ipn.Prefs): Ipn.MaskedPrefs {
-    val newRoutes = (removeAllZeroRoutes(prefs).AdvertiseRoutes ?: emptyList()).toMutableList()
+    val newRoutes = removeAllZeroRoutes(prefs).AdvertiseRoutes.orEmpty().toMutableList()
     newRoutes.add("0.0.0.0/0")
     newRoutes.add("::/0")
     val newPrefs = Ipn.MaskedPrefs()
@@ -335,7 +346,7 @@ open class IpnViewModel : ViewModel() {
 
   private fun removeAllZeroRoutes(prefs: Ipn.Prefs): Ipn.MaskedPrefs {
     val newRoutes = emptyList<String>().toMutableList()
-    (prefs.AdvertiseRoutes ?: emptyList()).forEach {
+    prefs.AdvertiseRoutes.orEmpty().forEach {
       if (it != "0.0.0.0/0" && it != "::/0") {
         newRoutes.add(it)
       }

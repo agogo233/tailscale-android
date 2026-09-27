@@ -101,12 +101,14 @@ fun SplitTunnelAppPickerView(
         ListItem(
             headlineContent = {
               Text(stringResource(R.string.certain_apps_are_not_routed_via_tailscale))
-            })
+            }
+        )
       } else if (mdmIncludedPackages.value?.isNotEmpty() == true) {
         ListItem(
             headlineContent = {
               Text(stringResource(R.string.only_specific_apps_are_routed_via_tailscale))
-            })
+            }
+        )
       } else {
         ListItem(
             headlineContent = {
@@ -115,13 +117,17 @@ fun SplitTunnelAppPickerView(
                       if (allowSelected) R.string.selected_apps_will_access_tailscale
                       else
                           R.string
-                              .selected_apps_will_access_the_internet_directly_without_using_tailscale))
-            })
+                              .selected_apps_will_access_the_internet_directly_without_using_tailscale
+                  )
+              )
+            }
+        )
         Lists.SectionDivider(
             stringResource(
                 if (allowSelected) R.string.count_included_apps else R.string.count_excluded_apps,
                 selectedPackageNames.count(),
-            ))
+            )
+        )
         SearchField(query = searchTerm, onQueryChange = model::updateSearchTerm)
         LazyColumn(modifier = Modifier.weight(1f).imePadding()) {
           if (installedApps.isEmpty()) {
@@ -236,7 +242,8 @@ fun FusMenu(viewModel: SplitTunnelAppPickerViewModel, onSwitchClick: (() -> Unit
         text =
             stringResource(
                 if (allowSelected) R.string.switch_to_select_to_exclude
-                else R.string.switch_to_select_to_include),
+                else R.string.switch_to_select_to_include
+            ),
     )
   }
 }
@@ -246,12 +253,14 @@ fun SwitchAlertDialog(allowSelected: Boolean, onConfirm: (() -> Unit), onDismiss
   val switchString =
       stringResource(
           if (allowSelected) R.string.switch_to_select_to_exclude
-          else R.string.switch_to_select_to_include)
+          else R.string.switch_to_select_to_include
+      )
   val switchDescription =
       stringResource(
           if (allowSelected)
               R.string.selected_apps_will_access_the_internet_directly_without_using_tailscale
-          else R.string.selected_apps_will_access_tailscale)
+          else R.string.selected_apps_will_access_tailscale
+      )
 
   AlertDialog(
       title = { Text(text = "$switchString?") },
@@ -259,7 +268,8 @@ fun SwitchAlertDialog(allowSelected: Boolean, onConfirm: (() -> Unit), onDismiss
         Text(
             text =
                 stringResource(R.string.your_current_selection_will_be_cleared) +
-                    "\n$switchDescription")
+                    "\n$switchDescription"
+        )
       },
       onDismissRequest = onDismiss,
       confirmButton = { TextButton(onClick = onConfirm) { Text(text = switchString) } },

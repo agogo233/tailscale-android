@@ -26,17 +26,16 @@ import kotlinx.coroutines.launch
 class SplitTunnelAppPickerViewModel : ViewModel() {
   val installedAppsManager = InstalledAppsManager(packageManager = App.get().packageManager)
 
-  val installedApps: StateFlow<List<InstalledApp>> =
-      flow {
-            emit(installedAppsManager.fetchInstalledApps())
-            initSelectedPackageNames()
-          }
-          .flowOn(Dispatchers.IO)
-          .stateIn(
-              scope = viewModelScope,
-              started = SharingStarted.WhileSubscribed(5000),
-              initialValue = listOf(),
-          )
+  val installedApps: StateFlow<List<InstalledApp>> = flow {
+    emit(installedAppsManager.fetchInstalledApps())
+    initSelectedPackageNames()
+  }
+      .flowOn(Dispatchers.IO)
+      .stateIn(
+          scope = viewModelScope,
+          started = SharingStarted.WhileSubscribed(5000),
+          initialValue = listOf(),
+      )
   val selectedPackageNames: StateFlow<List<String>> = MutableStateFlow(listOf())
   val searchTerm: StateFlow<String> = MutableStateFlow("")
 
@@ -92,7 +91,8 @@ class SplitTunnelAppPickerViewModel : ViewModel() {
               }
             }
             .intersect(installedApps.value.map { it.packageName }.toSet())
-            .toList())
+            .toList()
+    )
   }
 
   fun performSelectionSwitch() {
@@ -114,10 +114,9 @@ class SplitTunnelAppPickerViewModel : ViewModel() {
 
   private fun debounceSave() {
     saveJob?.cancel()
-    saveJob =
-        viewModelScope.launch {
-          delay(500) // Wait to batch multiple rapid updates
-          App.get().updateUserSelectedPackages(selectedPackageNames.value)
-        }
+    saveJob = viewModelScope.launch {
+      delay(500) // Wait to batch multiple rapid updates
+      App.get().updateUserSelectedPackages(selectedPackageNames.value)
+    }
   }
 }

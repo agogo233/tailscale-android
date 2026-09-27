@@ -209,8 +209,8 @@ $(RELEASE_TV_AAB): version gradle-dependencies
 	install -C ./android/build/outputs/bundle/release/android-release.aab $@
 
 tailscale-test.apk: version gradle-dependencies
-	(cd android && ./gradlew assembleApplicationTestAndroidTest)
-	install -C ./android/build/outputs/apk/androidTest/applicationTest/android-applicationTest-androidTest.apk $@
+	(cd android && ./gradlew assembleDebugAndroidTest)
+	install -C ./android/build/outputs/apk/androidTest/debug/android-debug-androidTest.apk $@
 
 # Command that (re)generates tailscale.version from the current git HEAD and
 # go.mod state. VERSION_LONG's trailing -g<hash> is this repo's HEAD, so this
@@ -314,10 +314,10 @@ env:
 .PHONY: jarsign-env
 jarsign-env:
 ifeq ($(JKS_PATH),)
-	$(error JKS_PATH is not set.  export JKS_PATH=/path/to/tailcale.jks)
+	$(error JKS_PATH is not set.  export JKS_PATH=/path/to/tailscale.jks)
 endif
 ifeq ($(JKS_PASSWORD),)
-	$(error JKS_PASSWORD is not set.  export JKS_PASSWORD=passwordForTailcale.jks)
+	$(error JKS_PASSWORD is not set.  export JKS_PASSWORD=passwordForTailscale.jks)
 endif
 ifeq ($(wildcard $(JKS_PATH)),)
 	$(error JKS_PATH does not point to a file)
@@ -346,7 +346,18 @@ bumposs: update-oss tailscale.version
 update-oss:
 	curl -f https://raw.githubusercontent.com/tailscale/tailscale/refs/heads/main/go.toolchain.rev > go.toolchain.rev.new
 	mv go.toolchain.rev.new go.toolchain.rev
-	GOPROXY=direct ./tool/go get tailscale.com@main
+# Resolve main to a commit ourselves rather than asking the Go module
+# proxy for tailscale.com@main, because the proxy caches branch
+# resolution and often returns a stale commit. With an explicit commit
+# the proxy fetches it on demand, so both tailscale.com and all of its
+# dependencies come from the proxy rather than slow direct git clones.
+# If the proxy fails for some reason, fall back to fetching just
+# tailscale.com directly while still using the proxy for everything else.
+	REV=$$(git ls-remote https://github.com/tailscale/tailscale.git refs/heads/main | cut -f1) && \
+		test -n "$$REV" && \
+		echo "Updating tailscale.com to $$REV" && \
+		(./tool/go get tailscale.com@$$REV || \
+			GONOPROXY=tailscale.com ./tool/go get tailscale.com@$$REV)
 	./tool/go mod tidy -compat=1.24
 
 # Get the commandline tools package, this provides (among other things) the sdkmanager binary.
@@ -384,6 +395,10 @@ checkandroidsdk: ## Check that Android SDK is installed
 .PHONY: test
 test: gradle-dependencies ## Run the Android tests
 	(cd android && ./gradlew test)
+
+.PHONY: release-lint
+release-lint: gradle-dependencies ## Run release lint checks
+	(cd android && ./gradlew --no-daemon lintVitalRelease)
 
 .PHONY: fmt
 fmt: gradle-dependencies ## Format the Android code
