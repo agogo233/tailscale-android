@@ -44,12 +44,7 @@ android {
         getLocalProperty("tailscale.useGoogleDnsFallback", "true"),
     )
 
-    project.findProperty("abis")?.toString()?.split(",")
-        ?.let {
-          ndk {
-            abiFilters.addAll(it)
-          }
-        }
+    project.findProperty("abis")?.toString()?.split(",")?.let { ndk { abiFilters.addAll(it) } }
   }
 
   compileOptions {
