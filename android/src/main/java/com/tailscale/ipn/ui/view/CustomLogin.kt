@@ -175,12 +175,7 @@ fun LoginView(
           headlineContent = { Text(text = secondTitle) },
           supportingContent = {
             Column(modifier = Modifier.fillMaxWidth()) {
-              secondExplanation?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodySmall,
-                )
-              }
+              secondExplanation?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
               OutlinedTextField(
                   modifier = Modifier.fillMaxWidth(),
                   colors =
@@ -192,17 +187,14 @@ fun LoginView(
                   value = secondVal,
                   onValueChange = { secondVal = it },
                   placeholder = {
-                    secondPlaceholder?.let {
-                      Text(it, style = MaterialTheme.typography.bodySmall)
-                    }
+                    secondPlaceholder?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
                   },
                   keyboardOptions =
                       KeyboardOptions(
                           capitalization = KeyboardCapitalization.None,
                           imeAction = ImeAction.Go,
                       ),
-                  keyboardActions =
-                      KeyboardActions(onGo = { onSubmitAction(textVal, secondVal) }),
+                  keyboardActions = KeyboardActions(onGo = { onSubmitAction(textVal, secondVal) }),
               )
             }
           },
