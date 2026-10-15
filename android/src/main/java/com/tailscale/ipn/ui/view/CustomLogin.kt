@@ -166,13 +166,16 @@ fun LoginView(
         },
     )
 
-    if (strings.secondTitle != null) {
+    val secondTitle = strings.secondTitle
+    if (secondTitle != null) {
+      val secondExplanation = strings.secondExplanation
+      val secondPlaceholder = strings.secondPlaceholder
       ListItem(
           colors = MaterialTheme.colorScheme.listItem,
-          headlineContent = { Text(text = strings.secondTitle) },
+          headlineContent = { Text(text = secondTitle) },
           supportingContent = {
             Column(modifier = Modifier.fillMaxWidth()) {
-              strings.secondExplanation?.let {
+              secondExplanation?.let {
                 Text(
                     text = it,
                     style = MaterialTheme.typography.bodySmall,
@@ -189,7 +192,7 @@ fun LoginView(
                   value = secondVal,
                   onValueChange = { secondVal = it },
                   placeholder = {
-                    strings.secondPlaceholder?.let {
+                    secondPlaceholder?.let {
                       Text(it, style = MaterialTheme.typography.bodySmall)
                     }
                   },
