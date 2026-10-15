@@ -238,11 +238,15 @@ open class IpnViewModel : ViewModel() {
 
   fun loginWithCustomControlURL(
       controlURL: String,
+      authKey: String? = null,
       completionHandler: (Result<Unit>) -> Unit = {},
   ) {
     val prefs = Ipn.MaskedPrefs()
     prefs.ControlURL = controlURL
-    login(prefs, completionHandler = completionHandler)
+    if (authKey != null) {
+      prefs.WantRunning = true
+    }
+    login(prefs, authKey = authKey, completionHandler = completionHandler)
   }
 
   fun logout(completionHandler: (Result<String>) -> Unit = {}) {

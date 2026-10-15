@@ -41,6 +41,9 @@ data class LoginViewStrings(
     var explanation: String,
     var inputTitle: String,
     var placeholder: String,
+    var secondTitle: String? = null,
+    var secondExplanation: String? = null,
+    var secondPlaceholder: String? = null,
 )
 
 @Composable
@@ -65,6 +68,9 @@ fun LoginWithCustomControlURLView(
             explanation = stringResource(id = R.string.custom_control_menu_desc),
             inputTitle = stringResource(id = R.string.custom_control_url_title),
             placeholder = stringResource(id = R.string.custom_control_placeholder),
+            secondTitle = stringResource(id = R.string.auth_key_input_title),
+            secondExplanation = stringResource(id = R.string.auth_key_explanation),
+            secondPlaceholder = stringResource(id = R.string.auth_key_placeholder),
         )
 
     error?.let { ErrorDialog(type = it, action = { viewModel.errorDialog.set(null) }) }
@@ -72,7 +78,7 @@ fun LoginWithCustomControlURLView(
     LoginView(
         innerPadding = innerPadding,
         strings = strings,
-        onSubmitAction = { viewModel.setControlURL(it, onNavigateHome) },
+        onSubmitAction = { url, key -> viewModel.setControlURL(url, key, onNavigateHome) },
     )
   }
 }
@@ -106,7 +112,7 @@ fun LoginWithAuthKeyView(
     LoginView(
         innerPadding = innerPadding,
         strings = strings,
-        onSubmitAction = { viewModel.setAuthKey(it, onNavigateHome) },
+        onSubmitAction = { key, _ -> viewModel.setAuthKey(key, onNavigateHome) },
     )
   }
 }
@@ -115,10 +121,11 @@ fun LoginWithAuthKeyView(
 fun LoginView(
     innerPadding: PaddingValues = PaddingValues(16.dp),
     strings: LoginViewStrings,
-    onSubmitAction: (String) -> Unit,
+    onSubmitAction: (String, String) -> Unit,
 ) {
 
   var textVal by remember { mutableStateOf("") }
+  var secondVal by remember { mutableStateOf("") }
 
   Column(
       modifier =
@@ -154,17 +161,57 @@ fun LoginView(
                       capitalization = KeyboardCapitalization.None,
                       imeAction = ImeAction.Go,
                   ),
-              keyboardActions = KeyboardActions(onGo = { onSubmitAction(textVal) }),
+              keyboardActions = KeyboardActions(onGo = { onSubmitAction(textVal, secondVal) }),
           )
         },
     )
+
+    if (strings.secondTitle != null) {
+      ListItem(
+          colors = MaterialTheme.colorScheme.listItem,
+          headlineContent = { Text(text = strings.secondTitle) },
+          supportingContent = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+              strings.secondExplanation?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+              }
+              OutlinedTextField(
+                  modifier = Modifier.fillMaxWidth(),
+                  colors =
+                      TextFieldDefaults.colors(
+                          focusedContainerColor = Color.Transparent,
+                          unfocusedContainerColor = Color.Transparent,
+                      ),
+                  textStyle = MaterialTheme.typography.bodyMedium,
+                  value = secondVal,
+                  onValueChange = { secondVal = it },
+                  placeholder = {
+                    strings.secondPlaceholder?.let {
+                      Text(it, style = MaterialTheme.typography.bodySmall)
+                    }
+                  },
+                  keyboardOptions =
+                      KeyboardOptions(
+                          capitalization = KeyboardCapitalization.None,
+                          imeAction = ImeAction.Go,
+                      ),
+                  keyboardActions =
+                      KeyboardActions(onGo = { onSubmitAction(textVal, secondVal) }),
+              )
+            }
+          },
+      )
+    }
 
     ListItem(
         colors = MaterialTheme.colorScheme.listItem,
         headlineContent = {
           Box(modifier = Modifier.fillMaxWidth()) {
             Button(
-                onClick = { onSubmitAction(textVal) },
+                onClick = { onSubmitAction(textVal, secondVal) },
                 content = { Text(stringResource(id = R.string.add_account_short)) },
             )
           }
