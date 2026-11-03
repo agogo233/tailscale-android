@@ -281,6 +281,9 @@
     <string name="multiple_peers_with_name_found">找到多个名为 %1$s 的同组设备</string>
     <string name="peer_with_name_is_not_an_exit_node">名为 %1$s 的同组设备不是出口节点</string>
     <string name="use_exit_node_intent_failed">使用出口节点意图失败</string>
+    <string name="use_exit_node_intent_timed_out">出口节点切换超时</string>
+    <string name="use_exit_node_intent_not_applied">出口节点变更未生效</string>
+    <string name="use_exit_node_intent_unknown_error">出口节点切换失败</string>
 
     <!-- Strings for the IPNReceiver -->
     <string name="title_connection_failed">Tailscale 连接失败</string>
