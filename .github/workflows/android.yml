@@ -1,21 +1,10 @@
 name: Android CI
 
 on:
-  workflow_dispatch:
-    inputs:
-      build_type:
-        description: 'Build type'
-        required: true
-        default: 'debug'
-        type: choice
-        options:
-          - debug
-          - release
-          - all
+  push:
 
 jobs:
   build:
-    if: inputs.build_type == 'debug' || inputs.build_type == 'all'
     runs-on: ubuntu-latest
 
     steps:
@@ -66,7 +55,6 @@ jobs:
           path: artifacts/tailscale-debug.zip
 
   release-arm64:
-    if: inputs.build_type == 'release' || inputs.build_type == 'all'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
