@@ -27,19 +27,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import coil.annotation.ExperimentalCoilApi
-import coil.compose.AsyncImage
-import coil.compose.AsyncImagePainter
+import coil3.compose.AsyncImage
+import coil3.compose.AsyncImagePainter
 import com.tailscale.ipn.R
 import com.tailscale.ipn.ui.model.IpnLocal
-import com.tailscale.ipn.ui.util.AndroidTVUtil
 import com.tailscale.ipn.ui.util.conditional
 
-@OptIn(ExperimentalCoilApi::class)
 @Composable
 fun Avatar(
     profile: IpnLocal.LoginProfile?,
     size: Int = 50,
+    isTv: Boolean,
     action: (() -> Unit)? = null,
     isFocusable: Boolean = false,
 ) {
@@ -51,9 +49,9 @@ fun Avatar(
   Box(
       contentAlignment = Alignment.Center,
       modifier =
-          Modifier.conditional(AndroidTVUtil.isAndroidTV(), { padding(4.dp) })
+          Modifier.conditional(isTv, { padding(4.dp) })
               .conditional(
-                  AndroidTVUtil.isAndroidTV() && isFocusable,
+                  isTv && isFocusable,
                   {
                     size((size * 1.5f).dp) // Focusable area is larger than the avatar
                   },
@@ -85,7 +83,7 @@ fun Avatar(
             contentDescription = stringResource(R.string.settings_title),
             modifier =
                 Modifier.conditional(
-                        AndroidTVUtil.isAndroidTV(),
+                        isTv,
                         { size((size * 0.8f).dp) },
                     )
                     .clip(CircleShape), // Icon size slightly smaller than the Box

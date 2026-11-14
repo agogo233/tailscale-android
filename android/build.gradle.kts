@@ -16,10 +16,8 @@ repositories {
 kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_17 } }
 
 android {
-  val androidApiLevel = providers.gradleProperty("androidApiLevel").get().toInt()
-
   ndkVersion = "23.1.7779620"
-  compileSdk = androidApiLevel
+  compileSdk = providers.gradleProperty("androidCompileSdk").get().toInt()
 
   signingConfigs {
     create("release") {
@@ -32,7 +30,7 @@ android {
 
   defaultConfig {
     minSdk = 26
-    targetSdk = androidApiLevel
+    targetSdk = providers.gradleProperty("androidApiLevel").get().toInt()
 
     versionCode = computeVersionCode()
     versionName = getVersionProperty("VERSION_LONG")
@@ -92,7 +90,6 @@ dependencies {
   // Kotlin dependencies.
   implementation(libs.kotlinx.serialization.json)
   implementation(libs.kotlinx.coroutines.core)
-  implementation(libs.androidx.room.ktx)
   runtimeOnly(libs.kotlinx.coroutines.android)
   implementation(libs.kotlin.stdlib)
   implementation(libs.kotlin.reflect)
@@ -105,9 +102,8 @@ dependencies {
   debugImplementation(libs.androidx.compose.ui.tooling)
   implementation(libs.androidx.compose.ui.toolingPreview)
   implementation(libs.androidx.lifecycle.viewmodel.ktx)
+  implementation(libs.androidx.lifecycle.runtime.compose)
   implementation(libs.androidx.activity.compose)
-  implementation(libs.accompanist.permissions)
-  implementation(libs.accompanist.systemuicontroller)
   implementation(libs.androidx.core.splashscreen)
   implementation(libs.androidx.compose.animation)
 
@@ -117,6 +113,7 @@ dependencies {
 
   // Supporting libraries.
   implementation(libs.coil.compose)
+  implementation(libs.coil.network.okhttp)
   implementation(libs.zxing.core)
   implementation(libs.vico.compose)
   implementation(libs.vico.composeM3)
@@ -133,14 +130,9 @@ dependencies {
   androidTestImplementation(libs.androidx.test.uiautomator)
   androidTestImplementation(libs.junit)
 
-  // Authentication only for tests.
-  androidTestImplementation(libs.kotlin.onetimepassword)
-  androidTestImplementation(libs.commons.codec)
-
   // Unit tests.
   testImplementation(libs.junit)
   testImplementation(libs.mockito.core)
-  testImplementation(libs.mockito.inline)
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.kotlinx.coroutines.test)
 }

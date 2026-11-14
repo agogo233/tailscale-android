@@ -31,7 +31,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import com.tailscale.ipn.R
+import com.tailscale.ipn.ui.components.Header
 import com.tailscale.ipn.ui.theme.listItem
+import com.tailscale.ipn.ui.util.AndroidTVUtil
 import com.tailscale.ipn.ui.util.set
 import com.tailscale.ipn.ui.viewModel.LoginWithAuthKeyViewModel
 import com.tailscale.ipn.ui.viewModel.LoginWithCustomControlURLViewModel
@@ -48,8 +50,8 @@ data class LoginViewStrings(
 
 @Composable
 fun LoginWithCustomControlURLView(
-    onNavigateHome: BackNavigation,
-    backToSettings: BackNavigation,
+    onNavigateHome: () -> Unit,
+    backToSettings: () -> Unit,
     viewModel: LoginWithCustomControlURLViewModel = LoginWithCustomControlURLViewModel(),
 ) {
 
@@ -58,6 +60,7 @@ fun LoginWithCustomControlURLView(
         Header(
             R.string.add_account,
             onBack = backToSettings,
+            isTv = AndroidTVUtil.isAndroidTV(),
         )
       }
   ) { innerPadding ->
@@ -85,8 +88,8 @@ fun LoginWithCustomControlURLView(
 
 @Composable
 fun LoginWithAuthKeyView(
-    onNavigateHome: BackNavigation,
-    backToSettings: BackNavigation,
+    onNavigateHome: () -> Unit,
+    backToSettings: () -> Unit,
     viewModel: LoginWithAuthKeyViewModel = LoginWithAuthKeyViewModel(),
 ) {
 
@@ -95,6 +98,7 @@ fun LoginWithAuthKeyView(
         Header(
             R.string.add_account,
             onBack = backToSettings,
+            isTv = AndroidTVUtil.isAndroidTV(),
         )
       }
   ) { innerPadding ->

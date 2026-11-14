@@ -93,8 +93,6 @@ class App : UninitializedApp(), libtailscale.AppContext, ViewModelStoreOwner {
   var healthNotifier: HealthNotifier? = null
   lateinit var favoritesManager: FavoritesManager
 
-  override fun getPlatformDNSConfig(): String = dns.dnsConfigAsString
-
   override fun getInstallSource(): String = AppSourceChecker.getInstallSource(this)
 
   override fun shouldUseGoogleDNSFallback(): Boolean = BuildConfig.USE_GOOGLE_DNS_FALLBACK
@@ -167,15 +165,16 @@ class App : UninitializedApp(), libtailscale.AppContext, ViewModelStoreOwner {
     // Check if a directory URI has already been stored.
     val storedUri = getStoredDirectoryUri()
     val rm = getSystemService(Context.RESTRICTIONS_SERVICE) as RestrictionsManager
+    val restrictions = MDMSettings.resolveRestrictions(this, rm)
     val hardwareAttestation =
-        rm.applicationRestrictions.getBoolean(MDMSettings.KEY_HARDWARE_ATTESTATION, true)
+        restrictions?.getBoolean(MDMSettings.KEY_HARDWARE_ATTESTATION, true) ?: true
 
     // Populate MDM settings before starting Tailscale so that the rsop
     // policy framework reads correct values during its initial synchronous load
     // in newPolicy(). If MDM settings are not populated, rsop caches "not configured"
     // for Hostname and only corrects it after policyReloadMinDelay,
     // at which point the device may have already registered with the wrong hostname.
-    MDMSettings.loadFrom(lazy { getEncryptedPrefs() }, rm)
+    MDMSettings.loadFrom(lazy { getEncryptedPrefs() }, restrictions)
 
     if (storedUri != null && storedUri.toString().startsWith("content://")) {
       startLibtailscale(storedUri.toString(), hardwareAttestation)

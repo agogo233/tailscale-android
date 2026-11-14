@@ -10,14 +10,14 @@
 # with this name, it will be used.
 #
 # The convention here is tailscale-android-build-amd64-<date>
-DOCKER_IMAGE := tailscale-android-build-amd64-20260912-1
+DOCKER_IMAGE := tailscale-android-build-amd64-20261106-1
 
 # The integration test image contains the Android emulator, system image, SDK,
 # build-tools, NDK, adb, and helper tools needed to run the emulator-backed Go
 # integration tests. Bump this tag when docker/Dockerfile.android-integration
 # or the required tool versions change, using:
 # tailscale-android-integration-amd64-YYYYMMDD-N
-ANDROID_INTEGRATION_DOCKER_IMAGE := tailscale-android-integration-amd64-20260912-1
+ANDROID_INTEGRATION_DOCKER_IMAGE := tailscale-android-integration-amd64-20261106-2
 export TS_USE_TOOLCHAIN=1
 
 # If set, additional comma-separated build tags passed to the libtailscale Go
@@ -29,9 +29,15 @@ GOMOBILE_BUILD_TAGS := ts_omit_cachenetmap
 
 # Pull androidApiLevel from gradle.properties.
 ANDROID_API_LEVEL := $(shell grep '^androidApiLevel=' android/gradle.properties | cut -d'=' -f2)
+# Pull androidCompileSdkPackage from gradle.properties.
+ANDROID_COMPILE_SDK_PACKAGE := $(shell grep '^androidCompileSdkPackage=' android/gradle.properties | cut -d'=' -f2)
 
 ifeq ($(ANDROID_API_LEVEL),)
 $(error androidApiLevel missing from android/gradle.properties)
+endif
+
+ifeq ($(ANDROID_COMPILE_SDK_PACKAGE),)
+$(error androidCompileSdkPackage missing from android/gradle.properties)
 endif
 
 ANDROID_BUILD_TOOLS_VERSION := $(shell grep '^androidBuildToolsVersion=' android/gradle.properties | cut -d'=' -f2)
@@ -71,7 +77,7 @@ else
     ANDROID_TOOLS_URL := "https://dl.google.com/android/repository/commandlinetools-mac-9477386_latest.zip"
     ANDROID_TOOLS_SUM := "2072ffce4f54cdc0e6d2074d2f381e7e579b7d63e915c220b96a7db95b2900ee  commandlinetools-mac-9477386_latest.zip"
 endif
-ANDROID_SDK_PACKAGES := 'platforms;android-$(ANDROID_API_LEVEL)' 'extras;android;m2repository' 'ndk;23.1.7779620' 'platform-tools' 'build-tools;$(ANDROID_BUILD_TOOLS_VERSION)'
+ANDROID_SDK_PACKAGES := 'platforms;android-$(ANDROID_API_LEVEL)' '$(ANDROID_COMPILE_SDK_PACKAGE)' 'extras;android;m2repository' 'ndk;23.1.7779620' 'platform-tools' 'build-tools;$(ANDROID_BUILD_TOOLS_VERSION)'
 
 # Attempt to find an ANDROID_SDK_ROOT / ANDROID_HOME based either from
 # preexisting environment or common locations.
@@ -336,7 +342,7 @@ tag_release: tailscale.version ## Tag the current commit with the current versio
 
 .PHONY: bumposs ## Bump to the latest oss and update the versions.
 bumposs: update-oss tailscale.version
-	source tailscale.version && git commit -sm "android: bump OSS" -m "OSS and Version updated to $${VERSION_LONG}" go.toolchain.rev go.mod go.sum
+	source tailscale.version && git commit -sm "android: bump OSS" -m "OSS and Version updated to $${VERSION_LONG}" -m "skip-issuebot" go.toolchain.rev go.mod go.sum
 	@# Regenerate tailscale.version so VERSION_LONG's -g<hash> points at the
 	@# bump commit we just created, not its parent.
 	$(MKVERSION) > tailscale.version
@@ -458,6 +464,7 @@ DOCKER_ANDROID_DIR := $(CURDIR)/.android-docker
 DOCKER_ANDROID_INTEGRATION_DIR := $(CURDIR)/.android-integration-docker
 DOCKER_GRADLE_DIR := $(CURDIR)/.gradle-docker
 DOCKER_GO_CACHE_DIR := $(CURDIR)/.cache-docker
+ANDROID_INTEGRATION_ARTIFACTS_DIR := integration-artifacts
 
 .PHONY: docker-android-dir
 docker-android-dir:
@@ -465,7 +472,7 @@ docker-android-dir:
 
 .PHONY: docker-android-integration-dir
 docker-android-integration-dir:
-	@mkdir -p $(DOCKER_ANDROID_INTEGRATION_DIR) $(DOCKER_GO_CACHE_DIR)
+	@mkdir -p $(DOCKER_ANDROID_INTEGRATION_DIR) $(DOCKER_GO_CACHE_DIR) $(ANDROID_INTEGRATION_ARTIFACTS_DIR)
 
 DOCKER_RUN_VOLS := -v $(CURDIR):/build/tailscale-android -v $(DOCKER_ANDROID_DIR):/root/.android -v $(DOCKER_GRADLE_DIR):/build/.gradle -v $(DOCKER_GO_CACHE_DIR):/build/.cache --env GOPATH=/build/.cache/go --env GOMODCACHE=/build/.cache/go/pkg/mod
 
@@ -490,7 +497,7 @@ android-integration-test-run: docker-build-android-integration-image docker-andr
 		--env GOMODCACHE=/root/.cache/go/pkg/mod \
 		-w /workspace \
 		$(ANDROID_INTEGRATION_DOCKER_IMAGE) \
-		/usr/local/bin/run-android-integration-test /workspace/$(DEBUG_APK)
+		/usr/local/bin/run-android-integration-test /workspace/$(DEBUG_APK) -artifacts -outputdir=/workspace/$(ANDROID_INTEGRATION_ARTIFACTS_DIR)
 
 .PHONY: docker-remove-build-image
 docker-remove-build-image: ## Removes the current docker build image
