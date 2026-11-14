@@ -172,6 +172,9 @@
     <string name="copy_to_clipboard">复制到剪贴板</string>
     <string name="copy">复制</string>
     <string name="copied">已复制</string>
+    <string name="copy_ipv4_address">复制 IPv4</string>
+    <string name="copy_ipv6_address">复制 IPv6</string>
+    <string name="copy_magic_dns_address">复制 MagicDNS 主机名</string>
     <string name="node_key">节点密钥</string>
     <string name="tailnet_lock_key">Tailnet 锁密钥</string>
     <string name="node_key_explainer">用于从你 Tailnet 中的另一台签名设备对此节点进行签名。</string>
@@ -298,6 +301,10 @@
     <string name="notifications_delivered_when_a_file_is_received_using_taildrop">使用 Taildrop 收到文件时发送的通知。</string>
     <string name="health_channel_name">错误和警告</string>
     <string name="health_channel_description">此通知类别用于发送重要的状态通知，应保持启用。例如，当出现影响互联网连接性的错误或警告时，它会通知你。</string>
+    <string name="key_expiry_channel_name">密钥过期</string>
+    <string name="key_expiry_channel_description">在 Tailscale 设备密钥即将过期时发送通知。</string>
+    <string name="key_expiry_notification_title">Tailscale 登录即将过期</string>
+    <string name="key_expiry_notification_body">请重新认证，以保持此设备与你的 tailnet 的连接。</string>
     <string name="copy_ip_address">复制 IP 地址</string>
     <string name="ping">Ping</string>
     <string name="relayed_connection">中继连接 (%1$s)</string>
@@ -390,5 +397,21 @@
     <!-- Strings for Hardware Attestation MDM setting -->
     <string name="enable_hardware_attestation">启用硬件认证</string>
     <string name="use_hardware_backed_keys_to_bind_node_identity_to_the_device">使用硬件支持的密钥将节点身份绑定到设备</string>
+
+    <!-- Strings for MDM settings -->
+    <string name="mdm_debug_policies_active">这些值来自本构建内嵌的调试策略文件，而非 MDM 提供方。</string>
+
+    <!-- App shortcuts (launcher long-press, Tasker, Samsung Modes & Routines) -->
+    <string name="shortcut_connect_short">连接</string>
+    <string name="shortcut_connect_long">连接到 Tailscale</string>
+    <string name="shortcut_disconnect_short">断开连接</string>
+    <string name="shortcut_disconnect_long">从 Tailscale 断开连接</string>
+
+    <!-- Strings for Pinned Favorites -->
+    <string name="pinned_devices">已置顶设备</string>
+
+    <!-- Strings for device dropdown menu -->
+    <string name="pin_device">置顶设备</string>
+    <string name="unpin_device">取消置顶</string>
 
 </resources>
