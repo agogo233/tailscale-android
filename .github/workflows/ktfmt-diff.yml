@@ -18,5 +18,6 @@ jobs:
 
       - name: Run ktfmtFormat and print diff
         run: |
+          make tailscale.version
           (cd android && ./gradlew ktfmtFormat)
           git diff --no-color
