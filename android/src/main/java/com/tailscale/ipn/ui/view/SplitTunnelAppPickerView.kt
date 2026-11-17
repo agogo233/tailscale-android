@@ -5,6 +5,7 @@ package com.tailscale.ipn.ui.view
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,12 +25,16 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -52,6 +57,7 @@ import com.tailscale.ipn.ui.components.Header
 import com.tailscale.ipn.ui.util.AndroidTVUtil
 import com.tailscale.ipn.ui.util.Lists
 import com.tailscale.ipn.ui.util.set
+import com.tailscale.ipn.ui.viewModel.SelectionFilter
 import com.tailscale.ipn.ui.viewModel.SplitTunnelAppPickerViewModel
 
 @Composable
@@ -63,6 +69,7 @@ fun SplitTunnelAppPickerView(
   val selectedPackageNames by model.selectedPackageNames.collectAsState()
   val visibleApps by model.visibleApps.collectAsState()
   val searchTerm by model.searchTerm.collectAsState()
+  val selectionFilter by model.selectionFilter.collectAsState()
   val allowSelected by model.allowSelected.collectAsState()
   val builtInDisallowedPackageNames: List<String> = App.get().builtInDisallowedPackageNames
   val mdmIncludedPackages by model.mdmIncludedPackages.collectAsState()
@@ -121,11 +128,37 @@ fun SplitTunnelAppPickerView(
                       if (allowSelected) R.string.selected_apps_will_access_tailscale
                       else
                           R.string
-                              .selected_apps_will_access_the_internet_directly_without_using_tailscale
+                               .selected_apps_will_access_the_internet_directly_without_using_tailscale
                   )
               )
             }
         )
+        SingleChoiceSegmentedButtonRow(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+        ) {
+          SegmentedButton(
+              selected = !allowSelected,
+              onClick = {
+                if (allowSelected) {
+                  model.showSwitchDialog.set(true)
+                }
+              },
+              shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+          ) {
+            Text(stringResource(R.string.mode_exclude_selected))
+          }
+          SegmentedButton(
+              selected = allowSelected,
+              onClick = {
+                if (!allowSelected) {
+                  model.showSwitchDialog.set(true)
+                }
+              },
+              shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+          ) {
+            Text(stringResource(R.string.mode_include_selected))
+          }
+        }
         Lists.SectionDivider(
             stringResource(
                 if (allowSelected) R.string.count_included_apps else R.string.count_excluded_apps,
@@ -133,6 +166,26 @@ fun SplitTunnelAppPickerView(
             )
         )
         SearchField(query = searchTerm, onQueryChange = model::updateSearchTerm)
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+          FilterChip(
+              selected = selectionFilter == SelectionFilter.ALL,
+              onClick = { model.setSelectionFilter(SelectionFilter.ALL) },
+              label = { Text(stringResource(R.string.filter_all)) },
+          )
+          FilterChip(
+              selected = selectionFilter == SelectionFilter.SELECTED,
+              onClick = { model.setSelectionFilter(SelectionFilter.SELECTED) },
+              label = { Text(stringResource(R.string.filter_selected)) },
+          )
+          FilterChip(
+              selected = selectionFilter == SelectionFilter.UNSELECTED,
+              onClick = { model.setSelectionFilter(SelectionFilter.UNSELECTED) },
+              label = { Text(stringResource(R.string.filter_unselected)) },
+          )
+        }
         LazyColumn(modifier = Modifier.weight(1f).imePadding()) {
           if (installedApps.isEmpty()) {
             item("spinner") {
@@ -147,7 +200,8 @@ fun SplitTunnelAppPickerView(
                 )
               }
             }
-          } else if (searchTerm.isNotBlank() && visibleApps.isEmpty()) {
+          } else if ((searchTerm.isNotBlank() || selectionFilter != SelectionFilter.ALL) &&
+              visibleApps.isEmpty()) {
             item("noResults") {
               ListItem(headlineContent = { Text(stringResource(R.string.no_results)) })
             }

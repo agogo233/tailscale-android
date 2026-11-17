@@ -23,6 +23,12 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+enum class SelectionFilter {
+  ALL,
+  SELECTED,
+  UNSELECTED,
+}
+
 class SplitTunnelAppPickerViewModel : ViewModel() {
   val installedAppsManager = InstalledAppsManager(packageManager = App.get().packageManager)
 
@@ -39,10 +45,16 @@ class SplitTunnelAppPickerViewModel : ViewModel() {
   val selectedPackageNames: StateFlow<List<String>> = MutableStateFlow(listOf())
   val searchTerm: StateFlow<String> = MutableStateFlow("")
 
+  val selectionFilter: StateFlow<SelectionFilter> = MutableStateFlow(SelectionFilter.ALL)
+
   val visibleApps: StateFlow<List<InstalledApp>> =
-      combine(installedApps, searchTerm, selectedPackageNames) { apps, term, selected ->
-            filterAndSortApps(apps, term, selected.toSet())
-          }
+      combine(installedApps, searchTerm, selectedPackageNames, selectionFilter) {
+            apps,
+            term,
+            selected,
+            filter ->
+          filterAndSortApps(apps, term, selected.toSet(), filter)
+        }
           .stateIn(
               scope = viewModelScope,
               started = SharingStarted.WhileSubscribed(5000),
@@ -62,14 +74,27 @@ class SplitTunnelAppPickerViewModel : ViewModel() {
     searchTerm.set(term)
   }
 
+  fun setSelectionFilter(filter: SelectionFilter) {
+    selectionFilter.set(filter)
+  }
+
   private fun filterAndSortApps(
       apps: List<InstalledApp>,
       term: String,
       selectedPackageNames: Set<String>,
+      filter: SelectionFilter,
   ): List<InstalledApp> {
     val query = term.trim().lowercase()
     val pinned = selectedPackageNames - App.get().builtInDisallowedPackageNames
-    val filtered = apps.filter { matchesSearch(it, query) }
+    val filtered =
+        apps.filter { app ->
+          matchesSearch(app, query) &&
+              when (filter) {
+                SelectionFilter.ALL -> true
+                SelectionFilter.SELECTED -> selectedPackageNames.contains(app.packageName)
+                SelectionFilter.UNSELECTED -> !selectedPackageNames.contains(app.packageName)
+              }
+        }
     return filtered.sortedBy { !pinned.contains(it.packageName) }
   }
 

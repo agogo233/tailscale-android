@@ -321,6 +321,11 @@
     <string name="selected_apps_will_access_tailscale">只有你选择的应用才被允许访问 Tailscale。</string>
     <string name="count_excluded_apps">已排除的应用 (%1$s)</string>
     <string name="count_included_apps">已包含的应用 (%1$s)</string>
+    <string name="mode_exclude_selected">排除所选应用</string>
+    <string name="mode_include_selected">仅包含所选应用</string>
+    <string name="filter_all">全部</string>
+    <string name="filter_selected">已选</string>
+    <string name="filter_unselected">未选</string>
     <string name="certain_apps_are_not_routed_via_tailscale">此设备上的某些应用不通过 Tailscale 路由。此设置由你的组织管理，你无法更改。如需更多信息，请联系你的网络管理员。</string>
     <string name="only_specific_apps_are_routed_via_tailscale">此设备上只有特定应用通过 Tailscale 路由。此设置由你的组织管理，你无法更改。如需更多信息，请联系你的网络管理员。</string>
     <string name="switch_to_select_to_include">切换为包含</string>
