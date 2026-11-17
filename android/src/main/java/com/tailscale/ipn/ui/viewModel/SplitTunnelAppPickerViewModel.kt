@@ -49,12 +49,12 @@ class SplitTunnelAppPickerViewModel : ViewModel() {
 
   val visibleApps: StateFlow<List<InstalledApp>> =
       combine(installedApps, searchTerm, selectedPackageNames, selectionFilter) {
-                apps,
-                term,
-                selected,
-                filter ->
-          filterAndSortApps(apps, term, selected.toSet(), filter)
-        }
+              apps,
+              term,
+              selected,
+              filter ->
+            filterAndSortApps(apps, term, selected.toSet(), filter)
+          }
           .stateIn(
               scope = viewModelScope,
               started = SharingStarted.WhileSubscribed(5000),

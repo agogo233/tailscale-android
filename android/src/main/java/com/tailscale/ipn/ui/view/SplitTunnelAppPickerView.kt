@@ -128,7 +128,7 @@ fun SplitTunnelAppPickerView(
                       if (allowSelected) R.string.selected_apps_will_access_tailscale
                       else
                           R.string
-                               .selected_apps_will_access_the_internet_directly_without_using_tailscale
+                              .selected_apps_will_access_the_internet_directly_without_using_tailscale
                   )
               )
             }
@@ -190,8 +190,10 @@ fun SplitTunnelAppPickerView(
                 )
               }
             }
-          } else if ((searchTerm.isNotBlank() || selectionFilter != SelectionFilter.ALL) &&
-              visibleApps.isEmpty()) {
+          } else if (
+              (searchTerm.isNotBlank() || selectionFilter != SelectionFilter.ALL) &&
+                  visibleApps.isEmpty()
+          ) {
             item("noResults") {
               ListItem(headlineContent = { Text(stringResource(R.string.no_results)) })
             }
