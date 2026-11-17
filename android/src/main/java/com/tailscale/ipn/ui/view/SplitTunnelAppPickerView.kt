@@ -138,26 +138,16 @@ fun SplitTunnelAppPickerView(
         ) {
           SegmentedButton(
               selected = !allowSelected,
-              onClick = {
-                if (allowSelected) {
-                  model.showSwitchDialog.set(true)
-                }
-              },
+              onClick = { if (allowSelected) model.showSwitchDialog.set(true) },
               shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-          ) {
-            Text(stringResource(R.string.mode_exclude_selected))
-          }
+              label = { Text(stringResource(R.string.mode_exclude_selected)) },
+          )
           SegmentedButton(
               selected = allowSelected,
-              onClick = {
-                if (!allowSelected) {
-                  model.showSwitchDialog.set(true)
-                }
-              },
+              onClick = { if (!allowSelected) model.showSwitchDialog.set(true) },
               shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-          ) {
-            Text(stringResource(R.string.mode_include_selected))
-          }
+              label = { Text(stringResource(R.string.mode_include_selected)) },
+          )
         }
         Lists.SectionDivider(
             stringResource(

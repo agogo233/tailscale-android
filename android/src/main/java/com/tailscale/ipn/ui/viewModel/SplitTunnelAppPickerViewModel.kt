@@ -49,10 +49,10 @@ class SplitTunnelAppPickerViewModel : ViewModel() {
 
   val visibleApps: StateFlow<List<InstalledApp>> =
       combine(installedApps, searchTerm, selectedPackageNames, selectionFilter) {
-            apps,
-            term,
-            selected,
-            filter ->
+                apps,
+                term,
+                selected,
+                filter ->
           filterAndSortApps(apps, term, selected.toSet(), filter)
         }
           .stateIn(
@@ -86,16 +86,16 @@ class SplitTunnelAppPickerViewModel : ViewModel() {
   ): List<InstalledApp> {
     val query = term.trim().lowercase()
     val pinned = selectedPackageNames - App.get().builtInDisallowedPackageNames
-    val filtered =
-        apps.filter { app ->
-          matchesSearch(app, query) &&
-              when (filter) {
-                SelectionFilter.ALL -> true
-                SelectionFilter.SELECTED -> selectedPackageNames.contains(app.packageName)
-                SelectionFilter.UNSELECTED -> !selectedPackageNames.contains(app.packageName)
-              }
+    return apps
+        .filter { matchesSearch(it, query) }
+        .filter {
+          when (filter) {
+            SelectionFilter.ALL -> true
+            SelectionFilter.SELECTED -> selectedPackageNames.contains(it.packageName)
+            SelectionFilter.UNSELECTED -> !selectedPackageNames.contains(it.packageName)
+          }
         }
-    return filtered.sortedBy { !pinned.contains(it.packageName) }
+        .sortedBy { !pinned.contains(it.packageName) }
   }
 
   private fun matchesSearch(app: InstalledApp, query: String): Boolean {
