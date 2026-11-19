@@ -30,10 +30,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tailscale.ipn.R
 import com.tailscale.ipn.ui.components.Header
 import com.tailscale.ipn.ui.theme.listItem
 import com.tailscale.ipn.ui.util.AndroidTVUtil
+import com.tailscale.ipn.ui.util.LoadingIndicator
 import com.tailscale.ipn.ui.util.set
 import com.tailscale.ipn.ui.viewModel.LoginWithAuthKeyViewModel
 import com.tailscale.ipn.ui.viewModel.LoginWithCustomControlURLViewModel
@@ -52,7 +54,7 @@ data class LoginViewStrings(
 fun LoginWithCustomControlURLView(
     onNavigateHome: () -> Unit,
     backToSettings: () -> Unit,
-    viewModel: LoginWithCustomControlURLViewModel = LoginWithCustomControlURLViewModel(),
+    viewModel: LoginWithCustomControlURLViewModel = viewModel(),
 ) {
 
   Scaffold(
@@ -65,6 +67,7 @@ fun LoginWithCustomControlURLView(
       }
   ) { innerPadding ->
     val error by viewModel.errorDialog.collectAsState()
+    val inProgress by viewModel.inProgress.collectAsState()
     val strings =
         LoginViewStrings(
             title = stringResource(id = R.string.custom_control_menu),
@@ -76,13 +79,16 @@ fun LoginWithCustomControlURLView(
             secondPlaceholder = stringResource(id = R.string.auth_key_placeholder),
         )
 
-    error?.let { ErrorDialog(type = it, action = { viewModel.errorDialog.set(null) }) }
+    LoadingIndicator.Wrap {
+      error?.let { ErrorDialog(type = it, action = { viewModel.errorDialog.set(null) }) }
 
-    LoginView(
-        innerPadding = innerPadding,
-        strings = strings,
-        onSubmitAction = { url, key -> viewModel.setControlURL(url, key, onNavigateHome) },
-    )
+      LoginView(
+          innerPadding = innerPadding,
+          strings = strings,
+          inProgress = inProgress,
+          onSubmitAction = { url, key -> viewModel.setControlURL(url, key, onNavigateHome) },
+      )
+    }
   }
 }
 
@@ -90,7 +96,7 @@ fun LoginWithCustomControlURLView(
 fun LoginWithAuthKeyView(
     onNavigateHome: () -> Unit,
     backToSettings: () -> Unit,
-    viewModel: LoginWithAuthKeyViewModel = LoginWithAuthKeyViewModel(),
+    viewModel: LoginWithAuthKeyViewModel = viewModel(),
 ) {
 
   Scaffold(
@@ -103,6 +109,7 @@ fun LoginWithAuthKeyView(
       }
   ) { innerPadding ->
     val error by viewModel.errorDialog.collectAsState()
+    val inProgress by viewModel.inProgress.collectAsState()
     val strings =
         LoginViewStrings(
             title = stringResource(id = R.string.auth_key_title),
@@ -111,13 +118,16 @@ fun LoginWithAuthKeyView(
             placeholder = stringResource(id = R.string.auth_key_placeholder),
         )
     // Show the error overlay if need be
-    error?.let { ErrorDialog(type = it, action = { viewModel.errorDialog.set(null) }) }
+    LoadingIndicator.Wrap {
+      error?.let { ErrorDialog(type = it, action = { viewModel.errorDialog.set(null) }) }
 
-    LoginView(
-        innerPadding = innerPadding,
-        strings = strings,
-        onSubmitAction = { key, _ -> viewModel.setAuthKey(key, onNavigateHome) },
-    )
+      LoginView(
+          innerPadding = innerPadding,
+          strings = strings,
+          inProgress = inProgress,
+          onSubmitAction = { key, _ -> viewModel.setAuthKey(key, onNavigateHome) },
+      )
+    }
   }
 }
 
@@ -125,6 +135,7 @@ fun LoginWithAuthKeyView(
 fun LoginView(
     innerPadding: PaddingValues = PaddingValues(16.dp),
     strings: LoginViewStrings,
+    inProgress: Boolean = false,
     onSubmitAction: (String, String) -> Unit,
 ) {
 
@@ -165,7 +176,10 @@ fun LoginView(
                       capitalization = KeyboardCapitalization.None,
                       imeAction = ImeAction.Go,
                   ),
-              keyboardActions = KeyboardActions(onGo = { onSubmitAction(textVal, secondVal) }),
+              keyboardActions =
+                  KeyboardActions(
+                      onGo = { if (!inProgress) onSubmitAction(textVal, secondVal) },
+                  ),
           )
         },
     )
@@ -198,7 +212,10 @@ fun LoginView(
                           capitalization = KeyboardCapitalization.None,
                           imeAction = ImeAction.Go,
                       ),
-                  keyboardActions = KeyboardActions(onGo = { onSubmitAction(textVal, secondVal) }),
+                  keyboardActions =
+                      KeyboardActions(
+                          onGo = { if (!inProgress) onSubmitAction(textVal, secondVal) },
+                      ),
               )
             }
           },
@@ -211,6 +228,7 @@ fun LoginView(
           Box(modifier = Modifier.fillMaxWidth()) {
             Button(
                 onClick = { onSubmitAction(textVal, secondVal) },
+                enabled = !inProgress,
                 content = { Text(stringResource(id = R.string.add_account_short)) },
             )
           }
